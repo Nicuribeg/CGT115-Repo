@@ -90,6 +90,7 @@ font = pygame.font.SysFont('Arial', 30)
 circleBody1 = pymunk.Body( 1, 100)
 circleBody1.position = (100, 300)
 circleShape1 = pymunk.Circle(circleBody1, 10)
+circleShape1.filter = pymunk.ShapeFilter(group=1)
 space.add(circleBody1, circleShape1)
 
 
@@ -99,10 +100,24 @@ circleShape2 = pymunk.Circle(circleBody2, 10)
 space.add(circleBody2, circleShape2)
 
 #bullet creations
-bulletBody1 = pymunk.Body( 1, 100)
+def fireLeftBullet(gameSpace,player_body):
+    bulletSpawnX = player_body.position.x + 35
+    bulletSpawnY = player_body.position.y
+    bulletMass = 1
+    bulletMoment = pymunk.moment_for_circle(bulletMass,0,5)
+    bulletBody = pymunk.Body(bulletMass, bulletMoment)
+    spawnDistance = 35
+    bulletBody.position = (bulletSpawnX + spawnDistance, bulletSpawnY)
+    bulletShape = pymunk.Circle(bulletBody, 5)
+    bulletShape.friction = 0
+    bulletShape.filter = (pymunk.ShapeFilter(group=1))
+    bulletBody.velocity = (800, 0)
 
-bulletShape1 = pymunk.Circle(bulletBody1, 10)
-space.add(bulletBody1, bulletShape1)
+    gameSpace.add(bulletBody, bulletShape)
+
+
+    return bulletShape
+
 
 #Game Loop
 leftArrowDown = False
@@ -163,6 +178,11 @@ while not done:
             if event.key == pygame.K_RSHIFT:
                 RightShiftDown = False
 
+    #Keeps track of bullets active
+    bullets = []
+    if LeftShiftDown:
+        newBullet = fireLeftBullet(space,circleBody1)
+        bullets.append(newBullet)
 
 
 
@@ -172,8 +192,13 @@ while not done:
     circleX = int(circleBody1.position.x)
     circleY = int(circleBody1.position.y)
     pygame.draw.circle(screen, (255, 255, 255), (circleX, circleY), 10)
-    MovePlayer2(circleBody2, circleShape2, AKeyDown, DKeyDown, SKeyDown, WKeyDown)
-    circleX = int(circleBody2.position.x)
-    circleY = int(circleBody2.position.y)
-    pygame.draw.circle(screen, (255, 255, 255), (circleX, circleY), 10)
+    #MovePlayer2(circleBody2, circleShape2, AKeyDown, DKeyDown, SKeyDown, WKeyDown)
+    #circleX = int(circleBody2.position.x)
+    #circleY = int(circleBody2.position.y)
+    #pygame.draw.circle(screen, (255, 255, 255), (circleX, circleY), 10)
+
+    for bullet in bullets:
+        pos = bullet.body.position
+        pygame.draw.circle(screen, (255, 0, 0), (int(pos.x), int(pos.y)), 5)
+
     pygame.display.update()
