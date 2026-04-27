@@ -29,6 +29,7 @@ game_timer_active = False
 game_over = False
 winner_message = ""
 
+#Initializes Pygame and sets screen
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((800, 600))
@@ -182,7 +183,7 @@ game_timer_start = time.time()
 game_timer_active = True
 
 
-#Images
+#Player and Bullet Images
 p1_image = pygame.image.load("p1.png").convert_alpha()
 p2_image = pygame.image.load("p2.png").convert_alpha()
 bullet_image = pygame.image.load("bullet.png").convert_alpha()
@@ -398,12 +399,10 @@ while not done:
     screen.fill((0, 0, 0))
     circle1X = int(circle_body_1.position.x)
     circle1Y = int(circle_body_1.position.y)
-    #pygame.draw.circle(screen, (255, 255, 255), (circle1X, circle1Y), 10)
     screen.blit(p1_image, (circle1X, circle1Y))
     MovePlayer2(circle_body_2, circle_shape_2, leftArrowDown, rightArrowDown, downArrowDown, upArrowDown)
     circle2X = int(circle_body_2.position.x)
     circle2Y = int(circle_body_2.position.y)
-    #pygame.draw.circle(screen, (255, 255, 255), (circle2X, circle2Y), 10)
     screen.blit(p2_image,(circle2X, circle2Y))
 
     #Draws Obstacles
@@ -501,7 +500,7 @@ while not done:
 
         if remaining > 0:
             timer_text = font.render(f"{remaining:.1f}", True, (255, 255, 255))
-            screen.blit(timer_text, (400, 10))  # Center top
+            screen.blit(timer_text, (400, 10))
         else:
             round_timer_active = False
             game_over = True
