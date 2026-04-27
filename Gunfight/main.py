@@ -29,6 +29,24 @@ game_timer_active = False
 game_over = False
 winner_message = ""
 
+pygame.init()
+pygame.font.init()
+screen = pygame.display.set_mode((800, 600))
+
+obstacle_size = (50,50)
+
+try:
+    raw_img = pygame.image.load('obs3.png').convert_alpha()
+    obstacle_img = pygame.transform.scale(raw_img, obstacle_size)
+except FileNotFoundError as e:
+    print(f"Warning: Missing obstacle image: {e}")
+    obstacle_img = pygame.Surface((50, 50))
+    obstacle_img.fill((255, 0, 0))
+
+
+
+space = pymunk.Space()
+space.gravity = (0, 0)
 
 def roundtimer():
     global timer_active
@@ -121,8 +139,20 @@ obstacles = []
 def create_static_obstacles():
     global obstacles
 
-    for body, shape in obstacles:
-        space.remove(shape, body)
+    shapes_to_remove = []
+    bodies_to_remove = []
+
+    for shape in space.shapes:
+        if shape.collision_type == COLLTYPE_OBSTACLE:
+            shapes_to_remove.append(shape)
+            bodies_to_remove.append(shape.body)
+
+    for i in range(len(shapes_to_remove)):
+        try:
+            space.remove(shapes_to_remove[i], bodies_to_remove[i])
+        except Exception:
+            pass
+
     obstacles = []
 
     for _ in range(3):
@@ -137,25 +167,37 @@ def create_static_obstacles():
         shape.filter = pymunk.ShapeFilter(categories=CAT_PLAYER, mask=CAT_BULLET)
 
         space.add(body, shape)
+
         obstacles.append((body, shape))
 
 
-#Initializing the game
-pygame.init()
-pygame.font.init()
-screen = pygame.display.set_mode((800, 600))
-space = pymunk.Space()
+#Creating static obstacles
 create_static_obstacles()
-space.gravity = (0, 0)
+
 #Load font
 font = pygame.font.SysFont('Arial', 30)
+
+#Start game timer
 game_timer_start = time.time()
 game_timer_active = True
+
+
+#Images
+p1_image = pygame.image.load("p1.png").convert_alpha()
+p2_image = pygame.image.load("p2.png").convert_alpha()
+bullet_image = pygame.image.load("bullet.png").convert_alpha()
+
+
+
+p1_image = pygame.transform.scale(p1_image, (50, 50))
+p2_image = pygame.transform.scale(p2_image, (50, 50))
+bullet_image = pygame.transform.scale(bullet_image, (10, 10))
+
 
 #Player 1 creation
 circle_body_1 = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
 circle_body_1.position = (100, 300)
-circle_shape_1 = pymunk.Circle(circle_body_1, 10)
+circle_shape_1 = pymunk.Circle(circle_body_1, 40)
 circle_shape_1.collision_type = COLLTYPE_PLAYER
 circle_shape_1.filter = pymunk.ShapeFilter(categories=CAT_PLAYER, mask=CAT_BULLET)
 space.add(circle_body_1, circle_shape_1)
@@ -163,7 +205,7 @@ space.add(circle_body_1, circle_shape_1)
 #Player 2 creation
 circle_body_2 = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
 circle_body_2.position = (700, 300)
-circle_shape_2 = pymunk.Circle(circle_body_2, 10)
+circle_shape_2 = pymunk.Circle(circle_body_2, 40)
 circle_shape_2.collision_type = COLLTYPE_PLAYER
 circle_shape_2.filter = pymunk.ShapeFilter(categories=CAT_PLAYER, mask=CAT_BULLET)
 space.add(circle_body_2, circle_shape_2)
@@ -356,26 +398,31 @@ while not done:
     screen.fill((0, 0, 0))
     circle1X = int(circle_body_1.position.x)
     circle1Y = int(circle_body_1.position.y)
-    pygame.draw.circle(screen, (255, 255, 255), (circle1X, circle1Y), 10)
+    #pygame.draw.circle(screen, (255, 255, 255), (circle1X, circle1Y), 10)
+    screen.blit(p1_image, (circle1X, circle1Y))
     MovePlayer2(circle_body_2, circle_shape_2, leftArrowDown, rightArrowDown, downArrowDown, upArrowDown)
     circle2X = int(circle_body_2.position.x)
     circle2Y = int(circle_body_2.position.y)
-    pygame.draw.circle(screen, (255, 255, 255), (circle2X, circle2Y), 10)
+    #pygame.draw.circle(screen, (255, 255, 255), (circle2X, circle2Y), 10)
+    screen.blit(p2_image,(circle2X, circle2Y))
 
     #Draws Obstacles
     for body, shape in obstacles:
-        x = int(body.position.x)
-        y = int(body.position.y)
-        pygame.draw.rect(screen, (255,0,0) ,(x-25,y-25,50,50))
+        x = int(body.position.x -25)
+        y = int(body.position.y -25)
+        screen.blit(obstacle_img, (x, y))
 
     #Draws bullets for each player
     for bullet in bullets_1:
         pos = bullet.position
-        pygame.draw.circle(screen, (255, 0, 0), (int(pos.x), int(pos.y)), 10)
+        bullet1X = int(pos.x - 5)
+        bullet1Y = int(pos.y - 5)
+        screen.blit(bullet_image, (bullet1X, bullet1Y))
     for bullet in bullets_2:
         pos = bullet.position
-        pygame.draw.circle(screen, (255, 0, 0), (int(pos.x), int(pos.y)), 10)
-
+        bullet2X = int(pos.x - 5)
+        bullet2Y = int(pos.y - 5)
+        screen.blit(bullet_image, (bullet2X, bullet2Y))
     #Renders UI texts
     ammo_text1 = font.render(f"P1 Ammo: {ammo_1}", True, (255, 255, 255))
     ammo_text2 = font.render(f"P2 Ammo: {ammo_2}", True, (255, 255, 255))
@@ -403,8 +450,11 @@ while not done:
 
     #Function that resets the round
     def reset_round():
-        global round_reset_pending, score_1, score_2
-        global bullets_1, bullets_2
+        global round_reset_pending
+        global score_1
+        global score_2
+        global bullets_1
+        global bullets_2
 
 
         circle_body_1.position = start_position_p1
@@ -412,8 +462,8 @@ while not done:
 
         for shape in list(space.shapes):
             if shape.collision_type == COLLTYPE_BULLET:
-                body = shape.body
-                space.remove(shape, body)
+                if shape.body in space.bodies:
+                    space.remove(shape, shape.body)
 
         bullets_1.clear()
         bullets_2.clear()
