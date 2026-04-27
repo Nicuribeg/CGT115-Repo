@@ -29,7 +29,7 @@ game_timer_active = False
 game_over = False
 winner_message = ""
 
-#timers
+
 def roundtimer():
     global timer_active
     global timer_start_time
@@ -58,6 +58,7 @@ COLLTYPE_BULLET = 1
 COLLTYPE_PLAYER = 2
 COLLTYPE_OBSTACLE = 3
 
+#Collision filter categories
 CAT_PLAYER = 0x0001
 CAT_BULLET = 0x0002
 
@@ -87,6 +88,7 @@ def MovePlayer1(body, shape, left, right, up, down):
 
     body.position = (newX, newY)
 
+#Player 2 Mover
 def MovePlayer2(body, shape, left, right, up, down):
     deltaX = 0
     deltaY = 0
@@ -115,7 +117,7 @@ def MovePlayer2(body, shape, left, right, up, down):
 # obstacle creations
 obstacles = []
 
-
+#Creates static obstacle bodies and shapes
 def create_static_obstacles():
     global obstacles
 
@@ -137,21 +139,20 @@ def create_static_obstacles():
         space.add(body, shape)
         obstacles.append((body, shape))
 
-# round structuring
 
-#initializing the game
+#Initializing the game
 pygame.init()
 pygame.font.init()
 screen = pygame.display.set_mode((800, 600))
 space = pymunk.Space()
 create_static_obstacles()
 space.gravity = (0, 0)
-# load font
+#Load font
 font = pygame.font.SysFont('Arial', 30)
 game_timer_start = time.time()
 game_timer_active = True
 
-#player creation
+#Player 1 creation
 circle_body_1 = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
 circle_body_1.position = (100, 300)
 circle_shape_1 = pymunk.Circle(circle_body_1, 10)
@@ -159,7 +160,7 @@ circle_shape_1.collision_type = COLLTYPE_PLAYER
 circle_shape_1.filter = pymunk.ShapeFilter(categories=CAT_PLAYER, mask=CAT_BULLET)
 space.add(circle_body_1, circle_shape_1)
 
-
+#Player 2 creation
 circle_body_2 = pymunk.Body(body_type=pymunk.Body.KINEMATIC)
 circle_body_2.position = (700, 300)
 circle_shape_2 = pymunk.Circle(circle_body_2, 10)
@@ -167,10 +168,7 @@ circle_shape_2.collision_type = COLLTYPE_PLAYER
 circle_shape_2.filter = pymunk.ShapeFilter(categories=CAT_PLAYER, mask=CAT_BULLET)
 space.add(circle_body_2, circle_shape_2)
 
-
-
-
-#bullet creations
+#Bullet creations
 def fireLeftBullet(gameSpace,player_body):
     bulletSpawnX = player_body.position.x + 35
     bulletSpawnY = player_body.position.y
@@ -208,9 +206,7 @@ def fireRightBullet(gameSpace,player_body):
 
     return bulletBody
 
-#Bullet Collisions
-
-
+#Bullet Remover
 def remove_bullet(arbiter, space, data):
     bullet_shape = arbiter.shapes[0]
     player_shape = arbiter.shapes[1]
@@ -245,12 +241,15 @@ def remove_bullet(arbiter, space, data):
 
     return True
 
+#Collision handler between player and bullets
 handler = space.add_collision_handler(COLLTYPE_BULLET, COLLTYPE_PLAYER)
 handler.post_solve = remove_bullet
 
+#Bullet tracking lists
 bullets_1 = []
 bullets_2 = []
 
+#Removing bullet from obstacles when colliding
 def remove_bullet_from_obstacle(arbiter, space, data):
     bullet_shape = None
     obstacle_shape = None
@@ -272,10 +271,12 @@ def remove_bullet_from_obstacle(arbiter, space, data):
 
     return True
 
+#Collision handler variables for obstacle and bullets
 obstacle_handler = space.add_collision_handler(COLLTYPE_BULLET, COLLTYPE_OBSTACLE)
 obstacle_handler.post_solve = remove_bullet_from_obstacle
 
-#Game Loop
+
+#Input variables
 leftArrowDown = False
 rightArrowDown = False
 upArrowDown = False
@@ -285,12 +286,16 @@ DKeyDown = False
 WKeyDown = False
 SKeyDown = False
 
+#Round variables
 roundActive = False
+
+#Ammo variables
 ammo_1 = 10
 ammo_2 = 10
-
 out_of_ammo1 = False
 out_of_ammo2 = False
+
+#Game Loop
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -370,6 +375,8 @@ while not done:
     for bullet in bullets_2:
         pos = bullet.position
         pygame.draw.circle(screen, (255, 0, 0), (int(pos.x), int(pos.y)), 10)
+
+    #Renders UI texts
     ammo_text1 = font.render(f"P1 Ammo: {ammo_1}", True, (255, 255, 255))
     ammo_text2 = font.render(f"P2 Ammo: {ammo_2}", True, (255, 255, 255))
     score_text1 = font.render(f"{score_1}", True, (255, 255, 255))
@@ -379,6 +386,7 @@ while not done:
     screen.blit(score_text1, (50, 20))
     screen.blit(score_text2, (750, 20))
 
+    #Initializes round timer
     roundtimer()
 
     #Starts round timer when either player runs out of ammo
@@ -428,13 +436,14 @@ while not done:
 
         create_static_obstacles()
 
-
+    #Adjusts time to reset the round depending on reset delay
     if round_reset_pending:
         current_time = time.time()
         if current_time - reset_timer_start >= reset_delay:
             reset_round()
             round_reset_pending = False
 
+    #Runs the timer depending if it is active and shows results screen + ends game when timer is over
     if game_timer_active and not game_over:
         current_time = time.time()
         elapsed = current_time - game_timer_start
